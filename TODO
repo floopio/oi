@@ -1,0 +1,72 @@
+- regional api
+  - read-only async updated list of services from other regions
+- api
+  - register service
+    - with metadata
+    - uuid instance id (from server) - all further comms require this id
+  - heartbeat
+    - set states
+      - starting - instance is starting and not available for service
+      - up - instance is available and awaiting requests
+      - down - instance is unavailable and will no longer send heartbeats - this terminates the relationship and renders the instance entry eligable for GC
+      - dead (from hb timeout) - heartbeats revieved after it has died will turn it into a zombie
+      - zombie - instance had died and is now avaiable, client should kill this instance and reregister.
+      - out-of-service - instance still needs to heartbeat, but will not be included in active list of instances
+  - query services
+    - by metadata
+    - prioritised by this region first
+
+DONE - Watchdog for service expiration
+- Etag support in responses
+  - What do we tag? Hashcode of service structure? Or do we hash the entire structure?
+- Support for delegate instances, e.g. of oi and of eureka
+  - Every running instance is a deleage of each other
+  - Working from the idea that the data _can_ be wrong and these are just views
+  - Relying on the rhobustness of the client
+  - Requires an async update of remote state - we don't want to have to wait for a synchronous call from a service list request
+  - {
+      "instance": UUID,
+      "service": INSTANCES,
+      "remotes" [{"instance": UUID....}, {...}, {...}]
+    }
+- Client keys for service-names
+  - Instances require a key to register
+- Admin api
+  - Service key management
+- Static location type - a service location that never expires, e.g. RDS, monitoring etc
+- Client library
+
+ 
+  PUT     /api/service/${svc_name}
+          Body contains metadata in the form key=value that the service node wishes to store.
+          This will set the service to the starting state.
+          Returns a UUID & a 201 Created and a Location header field
+
+          
+  GET     /api/service/${svc_name}
+          Returns a collection of all instances of this service for the local region, and a collection for any remote regions.
+          Each service instance contains all of the metadata that service registered with.
+          Accepts query parameters to filter the results by the metadata.
+          Returns a 404 if the service name does not exist
+
+
+  PUT     /api/service/${svc_name}/${instance_id}
+          This is the heartbeat url for a service instance, it requires a body that sets the state of the instance.
+          Returns a 202 Accepted or a 404 if the instance does not exist.
+          Once an instance is in the down state this will return 404s.
+
+
+  GET     /api/service/${svc_name}/${instance_id}
+          Returns the details and metadata of the service instance, or 404 if it does not exist.
+
+
+  PUT     /api/service/${svc_name}/${instance_id}/${key}
+          Sets the value of a metadata key for a service instance.
+          Returns a 201 Created if the key is created, or a 200 OK if the key is modified.
+          Returns a 404 if the service or instance does not exist.
+
+
+  DELETE  /api/service/${svc_name}/${instance_id}/${key}
+          Removes the metadata from the instance.
+          Returns a 204 No Content on success and a 404 if the service, instance or key does not exist.
+          

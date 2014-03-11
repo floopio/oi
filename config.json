@@ -1,0 +1,19 @@
+{
+    "watchdog": {
+        "sleepms": 5000
+    },
+
+    "service": {
+        "threshold": 2,
+        "timeoutms": {
+            "up": 5000,
+            "starting": 180000,
+            "dead": 3600000
+        }
+    },
+    
+    "client": {
+        "instances": ["http://localhost:8080"],
+        "updateperiodms": 5000
+    }
+}
