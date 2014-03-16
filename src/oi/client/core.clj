@@ -20,7 +20,7 @@
 
 
 ;; Flag to update from the server instances - on false all threads will die
-(def :^private run-updates (atom true))
+(def ^:private run-updates (atom true))
 
 ;; Maps the service name to a map of server-id->service-instances
 (def remote-services (ref {}))
@@ -29,7 +29,7 @@
 (defn update-service-handler [name]
   (fn [{:keys [status headers body error]}]
     (log/debug "update-service-handler -" status)
-    (if error
+    (if (or error (not (= status 200)))
       (log/error "Unable to process request - status:" status "\nError:" error "\nBody:" body)
       (let [b (parse-string body)]
         (dosync
@@ -44,6 +44,8 @@
 
 (defn- update-service [name]
   (doseq [f (map #(http/get (str % "/api/service/" name)
+                            {:query-params {:status "up"}
+                             :content-type "application/json"}
                             (update-service-handler name))
                  (known-instances))]
     @f)
@@ -65,12 +67,13 @@
 
 (defn stop-client []
   (log/info "Stopping the client...")
-  (swap! run-updates (fm [_] false))
+  (swap! run-updates (fn [_] false))
   (log/info "Client stopped, update thread will die"))
 
 (defn get-service [name & {:keys [no-cache] :or {no-cache false}}]
   "Returns the collection of available instances for a given service."
   (when (or no-cache (not (contains? @remote-services name)))
+    (log/debug "Forcing update of service:" name)
     (update-service name))
   (get @remote-services name))
 
