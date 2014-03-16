@@ -30,11 +30,11 @@
   (log/info "Starting a watchdog")
   (swap! run-watchdog (fn [_] true))
   (future
-    ((fn []
-       (Thread/sleep (cfg/get "watchdog.sleepms" 5000))
-       (pmap check-instance (service/get-all-instances))
-       (when @run-watchdog
-         (recur))))))
+    (loop []
+      (Thread/sleep (cfg/get "watchdog.sleepms" 5000))
+      (pmap check-instance (service/get-all-instances))
+      (when @run-watchdog
+        (recur)))))
 
 (defn stop []
   (log/info "Stopping ALL watchdogs")
