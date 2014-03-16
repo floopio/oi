@@ -19,7 +19,8 @@
 ;; * need a watchdog to expire the entires in the remote-services map - investigate cache impls
 
 
-
+;; Flag to update from the server instances - on false all threads will die
+(def :^private run-updates (atom true))
 
 ;; Maps the service name to a map of server-id->service-instances
 (def remote-services (ref {}))
@@ -30,31 +31,52 @@
     (log/debug "update-service-handler -" status)
     (if error
       (log/error "Unable to process request - status:" status "\nError:" error "\nBody:" body)
-      (do
-        (let [b (parse-string body)]
-          (dosync
-           (when (not (contains? @remote-services name))
-             (alter remote-services merge {name {}}))
-           (alter remote-services merge {name (merge (get @remote-services name)
-                                                     {(get b "server-instance-id") (get b "instances")})})))))))
+      (let [b (parse-string body)]
+        (dosync
+         (when-not (contains? @remote-services name)
+           (alter remote-services merge {name {}}))
+         (alter remote-services merge {name (merge (get @remote-services name)
+                                                   {(get b "server-instance-id") (get b "instances")})}))))))
 
-(defn known-instances []
+(defn- known-instances []
   "Returns a vector of instances this client knows about, this vector matches the ordering of priority of services."
   (cfg/get "client.instances" []))
 
-(defn get-service [name & {:keys [no-cache] :or {no-cache false}}]
-  "Returns the collection of available instances for a given service."
-
+(defn- update-service [name]
   (doseq [f (map #(http/get (str % "/api/service/" name)
                             (update-service-handler name))
-                 (cfg/get "client.instances" []))]
+                 (known-instances))]
     @f)
+  nil)
 
+(defn- init-client []
+  (log/info "Initialising the client...")
+  (swap! run-updates (fn [_] true))
+  (log/debug "Starting update-thread")
+  (future (loop [names (keys @remote-services)]
+            (log/info "Updating service names:" names)
+            (doseq [name names]
+              (log/debug "Updating service:" name)
+              (update-service name))
+            (Thread/sleep (cfg/get "client.updateperiodms" 5000))
+            (when @run-updates
+              (recur (keys @remote-services)))))
+  (log/info "Client initialisation complete"))
+
+(defn stop-client []
+  (log/info "Stopping the client...")
+  (swap! run-updates (fm [_] false))
+  (log/info "Client stopped, update thread will die"))
+
+(defn get-service [name & {:keys [no-cache] :or {no-cache false}}]
+  "Returns the collection of available instances for a given service."
+  (when (or no-cache (not (contains? @remote-services name)))
+    (update-service name))
   (get @remote-services name))
 
 (defn connect [name]
   "Returns a socket to the service, will ensure that it is connected."
   nil)
 
-
-
+;; Start the update threads
+(init-client)
