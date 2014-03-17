@@ -17,7 +17,12 @@
 ;;
 ;; WATCHDOG
 ;; * need a watchdog to expire the entires in the remote-services map - investigate cache impls
-
+;;
+;;
+;; c1   -> s1   ->   r1, r2, r3
+;;      -> s2   ->   r1, r4, r5
+;;
+;;
 
 ;; Flag to update from the server instances - on false all threads will die
 (def ^:private run-updates (atom true))
@@ -30,7 +35,9 @@
   (fn [{:keys [status headers body error]}]
     (log/debug "update-service-handler -" status)
     (if (or error (not (= status 200)))
-      (log/error "Unable to process request - status:" status "\nError:" error "\nBody:" body)
+      (if (= status 404)
+        (dosync (alter remote-services dissoc name))
+        (log/error "Unable to process request - status:" status "\nError:" error "\nBody:" body))
       (let [b (parse-string body)]
         (dosync
          (when-not (contains? @remote-services name)
