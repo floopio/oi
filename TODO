@@ -25,9 +25,9 @@ DONE - Watchdog for service expiration
   - Relying on the rhobustness of the client
   - Requires an async update of remote state - we don't want to have to wait for a synchronous call from a service list request
   - {
-      "instance": UUID,
-      "service": INSTANCES,
-      "remotes" [{"instance": UUID....}, {...}, {...}]
+      "server-instance-id": UUID,
+      "instances": INSTANCES,
+      "remote-instances": {"server-instance-id": UUID....}, {...}, {...}
     }
 - Client keys for service-names
   - Instances require a key to register
