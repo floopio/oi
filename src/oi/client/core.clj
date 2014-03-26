@@ -84,6 +84,8 @@
     (update-service name))
   (get @remote-services name))
 
+
+
 (defn connect [name]
   "Returns a socket to the service, will ensure that it is connected."
   nil)

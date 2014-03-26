@@ -13,6 +13,7 @@
     },
     
     "client": {
+        "master": "http://localhost:8080",
         "instances": ["http://localhost:8080"],
         "updateperiodms": 5000
     }
