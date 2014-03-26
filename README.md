@@ -1,10 +1,9 @@
-# service-locator
+# oi - A Service Locator
 
-A Clojure library designed to ... well, that part is up to you.
+This is a distrubuted, in-memory service-locator and client library.
 
-## Usage
+## Features
 
-FIXME
 
 ## License
 
