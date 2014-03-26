@@ -1,8 +1,8 @@
 (defproject io.floop/oi "0.1.0-SNAPSHOT"
   :description "A service-locator service."
-  :url "http://example.com/FIXME"
-  :license {:name "Eclipse Public License"
-            :url "http://www.eclipse.org/legal/epl-v10.html"}
+  :url "http://github.com/floopio/oi"
+  :license {:name "Apache License, Version 2.0"
+            :url "http://www.apache.org/licenses/LICENSE-2.0.html"}
   :dependencies [[org.clojure/clojure "1.5.1"]
                  [cheshire "5.2.0"]
                  [compojure "1.1.6"]
