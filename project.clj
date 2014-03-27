@@ -7,7 +7,7 @@
                  [cheshire "5.2.0"]
                  [compojure "1.1.6"]
                  [http-kit "2.1.16"]
-                 [io.floop/figgus "0.2.2"]
+                 [io.floop/figgus "0.2.3"]
                  [log4j/log4j "1.2.17"]
                  [liberator "0.10.0"]
                  [org.clojure/tools.logging "0.2.6"]
